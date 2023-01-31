@@ -34,7 +34,7 @@ def load_policy(algo_name, env, env_name, policy_path=None, seed=0, extra_config
         pass
     elif algo_name == 'sac':
         sac_config = setup_config(algo_name, env, seed)
-        algo = sac_config.build()
+        algo = sac_config.build(use_copy=False)  # We want to set use_copy=False because our env is a GymWrapper object, rather than a string. Copying the instantiated GymWrapper object causes issues.
     if policy_path != '':
         if 'checkpoint' in policy_path:
             algo.restore(policy_path)
