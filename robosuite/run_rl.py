@@ -22,7 +22,6 @@ def setup_config(algo_name, env, seed=0):
         config = SACConfig()\
             .rollouts(num_rollout_workers=4)\
             .resources(num_gpus=0)\
-            .environment(env=env)\
             .training(gamma=0.9, lr=0.01)\
             .debugging(seed=seed)
 
