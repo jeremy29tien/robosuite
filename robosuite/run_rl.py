@@ -33,7 +33,8 @@ def load_policy(algo_name, env, env_name, policy_path=None, seed=0, extra_config
     if algo_name == 'ppo':
         pass
     elif algo_name == 'sac':
-        algo = setup_config(algo_name, env, seed).build()
+        sac_config = setup_config(algo_name, env, seed)
+        algo = sac_config.build()
     if policy_path != '':
         if 'checkpoint' in policy_path:
             algo.restore(policy_path)
