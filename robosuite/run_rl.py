@@ -66,7 +66,7 @@ def make_env(env_name, seed=0):
             robots="Jaco",  # use Jaco robot -- TODO: can we leave this argument out?
             use_camera_obs=False,  # do not use pixel observations
             has_offscreen_renderer=False,  # not needed since not using pixel obs
-            has_renderer=True,  # make sure we can render to the screen
+            has_renderer=False,  # make sure we can render to the screen
             reward_shaping=True,  # use dense rewards -- TODO: change this?
             control_freq=20,  # control should happen fast enough so that simulation looks smooth
         )
