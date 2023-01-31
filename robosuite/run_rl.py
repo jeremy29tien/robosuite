@@ -2,7 +2,8 @@ import argparse
 import os, glob, shutil
 import numpy as np
 
-from ray.rllib.algorithms.ppo import PPOConfig, SACConfig
+from ray.rllib.algorithms.ppo import PPOConfig
+from ray.rllib.algorithms.sac import SACConfig
 from ray.tune.logger import pretty_print
 
 import robosuite as suite
