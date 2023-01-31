@@ -143,8 +143,6 @@ if __name__ == "__main__":
                         help='Number of rendering episodes (default: 1)')
     parser.add_argument('--eval-episodes', type=int, default=100,
                         help='Number of evaluation episodes (default: 100)')
-    parser.add_argument('--colab', action='store_true', default=False,
-                        help='Whether rendering should generate an animated png rather than open a window (e.g. when using Google Colab)')
     parser.add_argument('--verbose', action='store_true', default=False,
                         help='Whether to output more verbose prints')
     parser.add_argument('--save-checkpoints', action='store_true', default=False,
