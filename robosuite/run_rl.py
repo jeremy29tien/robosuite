@@ -90,7 +90,7 @@ def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_poli
                 shutil.rmtree(os.path.dirname(checkpoint_path), ignore_errors=True)
 
         # Save the recently trained policy
-        checkpoint_path = algo.save(os.path.join(save_dir, algo, env_name))
+        checkpoint_path = algo.save(os.path.join(save_dir, algo_name, env_name))
 
     return checkpoint_path
 
