@@ -14,7 +14,7 @@ Code is updated for Ray=2.2.0.
 """
 
 
-def setup_config(algo_name, env, seed=0):
+def setup_config(algo_name, env_name, seed=0):
     if algo_name == 'ppo':
         # TODO: Not implemented
         config = None
@@ -22,7 +22,7 @@ def setup_config(algo_name, env, seed=0):
         config = SACConfig()\
             .rollouts(num_rollout_workers=4)\
             .resources(num_gpus=0)\
-            .environment(env="robosuite.environments.manipulation.lift_gym.LiftJaco")\
+            .environment(env="robosuite.environments.manipulation.wrapped_gym_envs."+env_name+"Jaco")\
             .training(gamma=0.9, lr=0.01)\
             .debugging(seed=seed)
 
@@ -33,7 +33,7 @@ def load_policy(algo_name, env, env_name, policy_path=None, seed=0, extra_config
     if algo_name == 'ppo':
         pass
     elif algo_name == 'sac':
-        sac_config = setup_config(algo_name, env, seed)
+        sac_config = setup_config(algo_name, env_name, seed)
         algo = sac_config.build(use_copy=False)  # We want to set use_copy=False because our env is a GymWrapper object, rather than a string. Copying the instantiated GymWrapper object causes issues.
     if policy_path != '':
         if 'checkpoint' in policy_path:
