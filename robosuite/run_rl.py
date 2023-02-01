@@ -43,7 +43,7 @@ def load_policy(algo_name, env, env_name, policy_path=None, seed=0, extra_config
             print("##################")
         else:
             # Find the most recent policy in the directory
-            directory = os.path.join(policy_path, algo, env_name)
+            directory = os.path.join(policy_path, algo_name, env_name)
             files = [f.split('_')[-1] for f in glob.glob(os.path.join(directory, 'checkpoint_*'))]
             files_ints = [int(f) for f in files]
             if files:
