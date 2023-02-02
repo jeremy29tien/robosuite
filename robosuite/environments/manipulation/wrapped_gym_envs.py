@@ -1,3 +1,4 @@
+from robosuite import load_controller_config
 from robosuite.wrappers import GymWrapper
 import robosuite as suite
 
@@ -12,6 +13,7 @@ class LiftJaco(GymWrapper):
             has_renderer=False,  # make sure we can render to the screen
             reward_shaping=True,  # use dense rewards -- TODO: change this?
             control_freq=20,  # control should happen fast enough so that simulation looks smooth
+            controller_configs=load_controller_config(default_controller="OSC_POSITION"),
         )
         # Run super method
         super().__init__(env=env, keys=keys)

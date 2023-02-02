@@ -7,6 +7,7 @@ from ray.rllib.algorithms.sac import SACConfig
 from ray.tune.logger import pretty_print
 
 import robosuite as suite
+from robosuite import load_controller_config
 from robosuite.wrappers import GymWrapper
 
 """
@@ -49,7 +50,8 @@ def load_policy(algo_name, env, env_name, policy_path=None, seed=0, extra_config
             if files:
                 checkpoint_max = max(files_ints)
                 checkpoint_num = files_ints.index(checkpoint_max)
-                checkpoint_path = os.path.join(directory, 'checkpoint_%s' % files[checkpoint_num], 'checkpoint-%d' % checkpoint_max)
+                # checkpoint_path = os.path.join(directory, 'checkpoint_%s' % files[checkpoint_num], 'checkpoint-%d' % checkpoint_max)
+                checkpoint_path = os.path.join(directory, 'checkpoint_%s' % files[checkpoint_num])
                 algo.restore(checkpoint_path)
                 print("##################")
                 print("Inferring policy to load based on env_name:", checkpoint_path)
@@ -60,16 +62,17 @@ def load_policy(algo_name, env, env_name, policy_path=None, seed=0, extra_config
     return algo, None
 
 
-def make_env(env_name, seed=0):
+def make_env(env_name, seed=0, render=False):
     env = GymWrapper(
         suite.make(
             env_name,
             robots="Jaco",  # use Jaco robot -- TODO: can we leave this argument out?
             use_camera_obs=False,  # do not use pixel observations
             has_offscreen_renderer=False,  # not needed since not using pixel obs
-            has_renderer=False,  # make sure we can render to the screen
+            has_renderer=render,  # make sure we can render to the screen
             reward_shaping=True,  # use dense rewards -- TODO: change this?
             control_freq=20,  # control should happen fast enough so that simulation looks smooth
+            controller_configs=load_controller_config(default_controller="OSC_POSITION"),
         )
     )
     env.seed(seed)
@@ -121,6 +124,29 @@ def evaluate_policy(env_name, algo_name, policy_path, n_episodes=100, seed=0, ve
     return np.mean(rewards), np.std(rewards)
 
 
+def render_policy(env_name, algo_name, policy_path, n_episodes=1, seed=0):
+    env = make_env(env_name, seed, render=True)
+    algo, _ = load_policy(algo_name, env, env_name, policy_path, seed)
+
+    rewards = []
+    for episode in range(n_episodes):
+        obs = env.reset()
+        done = False
+        reward_total = 0.0
+        while not done:
+            action = algo.compute_single_action(obs)
+            obs, reward, done, info = env.step(action)
+            env.render()
+            reward_total += reward
+
+        rewards.append(reward_total)
+        print('Reward total: %.2f' % (reward_total))
+
+    print('\n', '-'*50, '\n')
+    print('Reward Mean:', np.mean(rewards))
+    print('Reward Std:', np.std(rewards))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='RL for MuJoCo envs')
     parser.add_argument('--env', default='Reacher-v2',
@@ -151,7 +177,10 @@ if __name__ == "__main__":
                         help='Whether to save multiple checkpoints of trained policy')
     args = parser.parse_args()
 
+    checkpoint_path = None
     if args.train:
         checkpoint_path = train(args.env, args.algo, epochs=args.train_epochs, save_dir=args.save_dir, load_policy_path=args.load_policy_path, seed=args.seed, save_checkpoints=args.save_checkpoints)
     if args.evaluate:
         evaluate_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.eval_episodes, seed=args.seed, verbose=args.verbose)
+    if args.render:
+        render_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.render_episodes, seed=args.seed)
