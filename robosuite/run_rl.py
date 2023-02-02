@@ -6,6 +6,8 @@ from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.algorithms.sac import SACConfig
 from ray.tune.logger import pretty_print
 
+from stable_baselines3 import SAC
+
 import robosuite as suite
 from robosuite import load_controller_config
 from robosuite.wrappers import GymWrapper
@@ -79,28 +81,40 @@ def make_env(env_name, seed=0, render=False):
     return env
 
 
-def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_policy_path='', seed=0, save_checkpoints=False):
+def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_policy_path='', seed=0, save_checkpoints=False, sb3=False):
     env = make_env(env_name, seed)
-    algo, checkpoint_path = load_policy(algo_name, env, env_name, load_policy_path, seed)
+    if sb3:
+        # Instantiate the agent
+        algo = SAC("MlpPolicy", env, verbose=1)
+        # Train the agent and display a progress bar
+        algo.learn(total_timesteps=250000, progress_bar=True, log_interval=4)
+        # Save the agent
+        checkpoint_path = os.path.join(save_dir, algo_name, env_name)
+        algo.save(checkpoint_path)
+    else:
+        algo, checkpoint_path = load_policy(algo_name, env, env_name, load_policy_path, seed)
 
-    for i in range(epochs):
-        result = algo.train()
-        print(pretty_print(result))
+        for i in range(epochs):
+            result = algo.train()
+            print(pretty_print(result))
 
-        if not (save_checkpoints and result['training_iteration'] % 10 == 1):
-            # Delete the old saved policy
-            if checkpoint_path is not None:
-                shutil.rmtree(os.path.dirname(checkpoint_path), ignore_errors=True)
+            if not (save_checkpoints and result['training_iteration'] % 10 == 1):
+                # Delete the old saved policy
+                if checkpoint_path is not None:
+                    shutil.rmtree(os.path.dirname(checkpoint_path), ignore_errors=True)
 
-        # Save the recently trained policy
-        checkpoint_path = algo.save(os.path.join(save_dir, algo_name, env_name))
+            # Save the recently trained policy
+            checkpoint_path = algo.save(os.path.join(save_dir, algo_name, env_name))
 
     return checkpoint_path
 
 
-def evaluate_policy(env_name, algo_name, policy_path, n_episodes=100, seed=0, verbose=False):
+def evaluate_policy(env_name, algo_name, policy_path, n_episodes=100, seed=0, verbose=False, sb3=False):
     env = make_env(env_name, seed)
-    algo, _ = load_policy(algo_name, env, env_name, policy_path, seed)
+    if sb3:
+        algo = SAC.load(policy_path)
+    else:
+        algo, _ = load_policy(algo_name, env, env_name, policy_path, seed)
 
     rewards = []
     for episode in range(n_episodes):
@@ -108,7 +122,10 @@ def evaluate_policy(env_name, algo_name, policy_path, n_episodes=100, seed=0, ve
         done = False
         reward_total = 0.0
         while not done:
-            action = algo.compute_single_action(obs)
+            if sb3:
+                action, _states = algo.predict(obs, deterministic=True)
+            else:
+                action = algo.compute_single_action(obs)
             obs, reward, done, info = env.step(action)
 
             reward_total += reward
@@ -124,9 +141,12 @@ def evaluate_policy(env_name, algo_name, policy_path, n_episodes=100, seed=0, ve
     return np.mean(rewards), np.std(rewards)
 
 
-def render_policy(env_name, algo_name, policy_path, n_episodes=1, seed=0):
+def render_policy(env_name, algo_name, policy_path, n_episodes=1, seed=0, sb3=False):
     env = make_env(env_name, seed, render=True)
-    algo, _ = load_policy(algo_name, env, env_name, policy_path, seed)
+    if sb3:
+        algo = SAC.load(policy_path)
+    else:
+        algo, _ = load_policy(algo_name, env, env_name, policy_path, seed)
 
     rewards = []
     for episode in range(n_episodes):
@@ -134,7 +154,10 @@ def render_policy(env_name, algo_name, policy_path, n_episodes=1, seed=0):
         done = False
         reward_total = 0.0
         while not done:
-            action = algo.compute_single_action(obs)
+            if sb3:
+                action, _states = algo.predict(obs, deterministic=True)
+            else:
+                action = algo.compute_single_action(obs)
             obs, reward, done, info = env.step(action)
             env.render()
             reward_total += reward
@@ -175,12 +198,14 @@ if __name__ == "__main__":
                         help='Whether to output more verbose prints')
     parser.add_argument('--save-checkpoints', action='store_true', default=False,
                         help='Whether to save multiple checkpoints of trained policy')
+    parser.add_argument('--sb3', action='store_true', default=False,
+                        help='Whether to use Stable Baselines 3 instead of RLLib')
     args = parser.parse_args()
 
     checkpoint_path = None
     if args.train:
-        checkpoint_path = train(args.env, args.algo, epochs=args.train_epochs, save_dir=args.save_dir, load_policy_path=args.load_policy_path, seed=args.seed, save_checkpoints=args.save_checkpoints)
+        checkpoint_path = train(args.env, args.algo, epochs=args.train_epochs, save_dir=args.save_dir, load_policy_path=args.load_policy_path, seed=args.seed, save_checkpoints=args.save_checkpoints, sb3=args.sb3)
     if args.evaluate:
-        evaluate_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.eval_episodes, seed=args.seed, verbose=args.verbose)
+        evaluate_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.eval_episodes, seed=args.seed, verbose=args.verbose, sb3=args.sb3)
     if args.render:
-        render_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.render_episodes, seed=args.seed)
+        render_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.render_episodes, seed=args.seed, sb3=args.sb3)
