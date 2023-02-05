@@ -85,7 +85,7 @@ def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_poli
     env = make_env(env_name, seed)
     if sb3:
         # Instantiate the agent
-        algo = SAC("MlpPolicy", env, verbose=1)
+        algo = SAC("MlpPolicy", env, verbose=1, learning_rate=0.001, buffer_size=1000000, learning_starts=3300, batch_size=256, tau=0.005, seed=seed)
         # Train the agent and display a progress bar
         algo.learn(total_timesteps=250000, progress_bar=True, log_interval=4)
         # Save the agent
