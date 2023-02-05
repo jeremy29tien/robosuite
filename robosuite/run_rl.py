@@ -81,11 +81,11 @@ def make_env(env_name, seed=0, render=False):
     return env
 
 
-def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_policy_path='', seed=0, save_checkpoints=False, sb3=False):
+def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_policy_path='', seed=0, save_checkpoints=False, sb3=False, learning_rate=0.001, batch_size=256):
     env = make_env(env_name, seed)
     if sb3:
         # Instantiate the agent
-        algo = SAC("MlpPolicy", env, verbose=1, learning_rate=0.001, buffer_size=1000000, learning_starts=3300, batch_size=256, tau=0.005, seed=seed)
+        algo = SAC("MlpPolicy", env, verbose=1, learning_rate=learning_rate, buffer_size=1000000, learning_starts=3300, batch_size=batch_size, tau=0.005, seed=seed)
         # Train the agent and display a progress bar
         algo.learn(total_timesteps=250000, progress_bar=True, log_interval=4)
         # Save the agent
@@ -200,11 +200,13 @@ if __name__ == "__main__":
                         help='Whether to save multiple checkpoints of trained policy')
     parser.add_argument('--sb3', action='store_true', default=False,
                         help='Whether to use Stable Baselines 3 instead of RLLib')
+    parser.add_argument('--learning-rate', type=float, default=0.001, help='')
+    parser.add_argument('--batch-size', type=int, default=256, help='')
     args = parser.parse_args()
 
     checkpoint_path = None
     if args.train:
-        checkpoint_path = train(args.env, args.algo, epochs=args.train_epochs, save_dir=args.save_dir, load_policy_path=args.load_policy_path, seed=args.seed, save_checkpoints=args.save_checkpoints, sb3=args.sb3)
+        checkpoint_path = train(args.env, args.algo, epochs=args.train_epochs, save_dir=args.save_dir, load_policy_path=args.load_policy_path, seed=args.seed, save_checkpoints=args.save_checkpoints, sb3=args.sb3, learning_rate=args.learning_rate, batch_size=args.batch_size)
     if args.evaluate:
         evaluate_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.eval_episodes, seed=args.seed, verbose=args.verbose, sb3=args.sb3)
     if args.render:
