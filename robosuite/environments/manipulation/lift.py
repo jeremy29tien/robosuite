@@ -4,7 +4,7 @@ import numpy as np
 
 from robosuite.environments.manipulation.single_arm_env import SingleArmEnv
 from robosuite.models.arenas import TableArena
-from robosuite.models.objects import BoxObject
+from robosuite.models.objects import BoxObject, BottleObject
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
@@ -302,14 +302,17 @@ class Lift(SingleArmEnv):
             material=redwood,
         )
 
+        # Adding an additional Bottle Object to the env
+        self.bottle = BottleObject(name="bottle")
+
         # Create placement initializer
         if self.placement_initializer is not None:
             self.placement_initializer.reset()
-            self.placement_initializer.add_objects(self.cube)
+            self.placement_initializer.add_objects([self.cube, self.bottle])
         else:
             self.placement_initializer = UniformRandomSampler(
                 name="ObjectSampler",
-                mujoco_objects=self.cube,
+                mujoco_objects=[self.cube, self.bottle],
                 x_range=[-0.03, 0.03],
                 y_range=[-0.03, 0.03],
                 rotation=None,
@@ -323,7 +326,7 @@ class Lift(SingleArmEnv):
         self.model = ManipulationTask(
             mujoco_arena=mujoco_arena,
             mujoco_robots=[robot.robot_model for robot in self.robots],
-            mujoco_objects=self.cube,
+            mujoco_objects=[self.cube, self.bottle],
         )
 
     def _setup_references(self):
@@ -368,6 +371,9 @@ class Lift(SingleArmEnv):
                     if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
                     else np.zeros(3)
                 )
+
+            # TODO: Define more methods as needed for adding features to the observation. For example, we would add
+            # TODO: functions here for information about the bottle (other objects in the env other than the cube.
 
             sensors = [cube_pos, cube_quat, gripper_to_cube_pos]
             names = [s.__name__ for s in sensors]
