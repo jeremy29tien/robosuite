@@ -8,7 +8,7 @@ from robosuite.models.objects import BoxObject, BottleObject
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
-from robosuite.utils.placement_samplers import UniformRandomSampler
+from robosuite.utils.placement_samplers import UniformRandomSampler, SequentialCompositeSampler
 from robosuite.utils.transform_utils import convert_quat
 
 
@@ -308,19 +308,51 @@ class Lift(SingleArmEnv):
         # Create placement initializer
         if self.placement_initializer is not None:
             self.placement_initializer.reset()
-            self.placement_initializer.add_objects([self.cube, self.bottle])
+            # self.placement_initializer.add_objects([self.cube, self.bottle])
+            self.placement_initializer.add_objects_to_sampler(sampler_name="BoxSampler", mujoco_objects=self.cube)
+            self.placement_initializer.add_objects_to_sampler(sampler_name="BottleSampler", mujoco_objects=self.bottle)
         else:
-            self.placement_initializer = UniformRandomSampler(
-                name="ObjectSampler",
-                mujoco_objects=[self.cube, self.bottle],
-                x_range=[-0.03, 0.03],
-                y_range=[-0.03, 0.03],
-                rotation=None,
-                ensure_object_boundary_in_range=False,
-                ensure_valid_placement=True,
-                reference_pos=self.table_offset,
-                z_offset=0.01,
+            self.placement_initializer = SequentialCompositeSampler(name="ObjectSampler")
+
+            self.placement_initializer.append_sampler(
+                sampler=UniformRandomSampler(
+                    name="BoxSampler",
+                    mujoco_objects=self.cube,
+                    x_range=[-0.03, 0.03],
+                    y_range=[-0.03, 0.03],
+                    rotation=None,
+                    ensure_object_boundary_in_range=False,
+                    ensure_valid_placement=True,
+                    reference_pos=self.table_offset,
+                    z_offset=0.01,
+                )
             )
+
+            self.placement_initializer.append_sampler(
+                sampler=UniformRandomSampler(
+                    name="BottleSampler",
+                    mujoco_objects=self.bottle,
+                    x_range=[-0.30, 0.30],
+                    y_range=[-0.30, 0.30],
+                    rotation=None,
+                    ensure_object_boundary_in_range=False,
+                    ensure_valid_placement=True,
+                    reference_pos=self.table_offset,
+                    z_offset=0.01,
+                )
+            )
+
+            # self.placement_initializer = UniformRandomSampler(
+            #     name="ObjectSampler",
+            #     mujoco_objects=[self.cube, self.bottle],
+            #     x_range=[-0.03, 0.03],
+            #     y_range=[-0.03, 0.03],
+            #     rotation=None,
+            #     ensure_object_boundary_in_range=False,
+            #     ensure_valid_placement=True,
+            #     reference_pos=self.table_offset,
+            #     z_offset=0.01,
+            # )
 
         # task includes arena, robot, and objects of interest
         self.model = ManipulationTask(
