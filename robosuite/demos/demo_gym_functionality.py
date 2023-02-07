@@ -33,15 +33,15 @@ demonstrates how this can be easily achieved by using the GymWrapper.
 
 import robosuite as suite
 from robosuite.wrappers import GymWrapper
-from robosuite.environments.manipulation.lift_features import speed, height
+from robosuite.environments.manipulation.lift_features import speed, height, distance_to_bottle
 
 if __name__ == "__main__":
 
     # Notice how the environment is wrapped by the wrapper
     env = GymWrapper(
         suite.make(
-            "Lift",
-            robots="Jaco",  # use Sawyer robot
+            "LiftModded",
+            robots="Jaco",
             use_camera_obs=False,  # do not use pixel observations
             has_offscreen_renderer=False,  # not needed since not using pixel obs
             has_renderer=True,  # make sure we can render to the screen
@@ -58,6 +58,7 @@ if __name__ == "__main__":
             observation, reward, done, info = env.step(action)
             print("speed:", speed(observation))
             print("height:", height(observation))
+            print("distance to bottle:", distance_to_bottle(observation))
             if done:
                 print("Episode finished after {} timesteps".format(t + 1))
                 break
