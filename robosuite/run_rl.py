@@ -64,28 +64,29 @@ def load_policy(algo_name, env, env_name, policy_path=None, seed=0, extra_config
     return algo, None
 
 
-def make_env(env_name, seed=0, render=False):
+def make_env(env_name, robot_name, controller_name, seed=0, render=False):
     env = GymWrapper(
         suite.make(
             env_name,
-            robots="Jaco",  # use Jaco robot -- TODO: can we leave this argument out?
+            robots=robot_name,  # use Jaco robot
             use_camera_obs=False,  # do not use pixel observations
             has_offscreen_renderer=False,  # not needed since not using pixel obs
             has_renderer=render,  # make sure we can render to the screen
             reward_shaping=True,  # use dense rewards -- TODO: change this?
             control_freq=20,  # control should happen fast enough so that simulation looks smooth
-            controller_configs=load_controller_config(default_controller="OSC_POSITION"),
+            controller_configs=load_controller_config(default_controller=controller_name),
         )
     )
     env.seed(seed)
     return env
 
 
-def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_policy_path='', seed=0, save_checkpoints=False, sb3=False, learning_rate=0.001, batch_size=256):
-    env = make_env(env_name, seed)
+def train(env_name, robot_name, controller_name, algo_name, epochs=0, save_dir='./trained_models/', load_policy_path='', seed=0, save_checkpoints=False, sb3=False, learning_rate=0.001, batch_size=256):
+    env = make_env(env_name, robot_name, controller_name, seed)
     if sb3:
         # Instantiate the agent
-        algo = SAC("MlpPolicy", env, verbose=1, learning_rate=learning_rate, buffer_size=1000000, learning_starts=3300, batch_size=batch_size, tau=0.005, seed=seed)
+        algo = SAC("MlpPolicy", env, verbose=1, learning_rate=learning_rate, buffer_size=1000000, learning_starts=3300,
+                   batch_size=batch_size, tau=0.005, train_freq=2500, gradient_steps=1000, seed=seed)
         # Train the agent and display a progress bar
         algo.learn(total_timesteps=250000, progress_bar=True, log_interval=4)
         # Save the agent
@@ -109,8 +110,8 @@ def train(env_name, algo_name, epochs=0, save_dir='./trained_models/', load_poli
     return checkpoint_path
 
 
-def evaluate_policy(env_name, algo_name, policy_path, n_episodes=100, seed=0, verbose=False, sb3=False):
-    env = make_env(env_name, seed)
+def evaluate_policy(env_name, robot_name, controller_name, algo_name, policy_path, n_episodes=100, seed=0, verbose=False, sb3=False):
+    env = make_env(env_name, robot_name, controller_name, seed)
     if sb3:
         algo = SAC.load(policy_path)
     else:
@@ -141,8 +142,8 @@ def evaluate_policy(env_name, algo_name, policy_path, n_episodes=100, seed=0, ve
     return np.mean(rewards), np.std(rewards)
 
 
-def render_policy(env_name, algo_name, policy_path, n_episodes=1, seed=0, sb3=False):
-    env = make_env(env_name, seed, render=True)
+def render_policy(env_name, robot_name, controller_name, algo_name, policy_path, n_episodes=1, seed=0, sb3=False):
+    env = make_env(env_name, robot_name, controller_name, seed, render=True)
     if sb3:
         algo = SAC.load(policy_path)
     else:
@@ -174,6 +175,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='RL for MuJoCo envs')
     parser.add_argument('--env', default='Reacher-v2',
                         help='Environment to train on (default: Reacher-v2)')
+    parser.add_argument('--robot', default='Jaco',
+                        help='Robot to train with.')
+    parser.add_argument('--controller', default='OSC_POSITION',
+                        help='Robot to train with.')
     parser.add_argument('--algo', default='ppo',
                         help='Reinforcement learning algorithm')
     parser.add_argument('--seed', type=int, default=1,
@@ -206,8 +211,8 @@ if __name__ == "__main__":
 
     checkpoint_path = None
     if args.train:
-        checkpoint_path = train(args.env, args.algo, epochs=args.train_epochs, save_dir=args.save_dir, load_policy_path=args.load_policy_path, seed=args.seed, save_checkpoints=args.save_checkpoints, sb3=args.sb3, learning_rate=args.learning_rate, batch_size=args.batch_size)
+        checkpoint_path = train(args.env, args.robot, args.controller, args.algo, epochs=args.train_epochs, save_dir=args.save_dir, load_policy_path=args.load_policy_path, seed=args.seed, save_checkpoints=args.save_checkpoints, sb3=args.sb3, learning_rate=args.learning_rate, batch_size=args.batch_size)
     if args.evaluate:
-        evaluate_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.eval_episodes, seed=args.seed, verbose=args.verbose, sb3=args.sb3)
+        evaluate_policy(args.env, args.robot, args.controller, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.eval_episodes, seed=args.seed, verbose=args.verbose, sb3=args.sb3)
     if args.render:
-        render_policy(args.env, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.render_episodes, seed=args.seed, sb3=args.sb3)
+        render_policy(args.env, args.robot, args.controller, args.algo, checkpoint_path if checkpoint_path is not None else args.load_policy_path, n_episodes=args.render_episodes, seed=args.seed, sb3=args.sb3)
