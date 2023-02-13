@@ -328,10 +328,18 @@ class LiftModded(Lift):
                     else np.zeros(3)
                 )
 
+            @sensor(modality=modality)
+            def efc_vel(obs_cache):
+                return np.array(self.sim.data.efc_vel[self.robots[0].eef_site_id])
+
+            @sensor(modality=modality)
+            def hand_vel(obs_cache):
+                return self.robots[0]._hand_vel
+
             # TODO: Define more methods as needed for adding features to the observation. For example, we would add
             # TODO: functions here for information about the bottle (other objects in the env other than the cube.
 
-            sensors = [bottle_pos, bottle_quat, gripper_to_bottle_pos]
+            sensors = [bottle_pos, bottle_quat, gripper_to_bottle_pos, efc_vel, hand_vel]
             names = [s.__name__ for s in sensors]
 
             # Create observables
