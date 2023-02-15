@@ -19,7 +19,7 @@ def generate_synthetic_comparisons(traj1, traj2, feature_name):
         traj1_feature_values = [speed(traj1[t]) for t in range(horizon)]
         traj2_feature_values = [speed(traj2[t]) for t in range(horizon)]
 
-        if np.mean(traj1_feature_values) > np.mean(traj2_feature_values):
+        if np.mean(traj1_feature_values) > np.mean(traj2_feature_values):  # Here, we take the MEAN speed
             ordinary_comps = ["The first trajectory is " + w + " than the second trajectory." for w in greater_speed_adjs]
             flipped_comps = ["The second trajectory is " + w + " than the first trajectory." for w in less_speed_adjs]
             return ordinary_comps + flipped_comps
@@ -32,7 +32,7 @@ def generate_synthetic_comparisons(traj1, traj2, feature_name):
         traj1_feature_values = [height(traj1[t]) for t in range(horizon)]
         traj2_feature_values = [height(traj2[t]) for t in range(horizon)]
 
-        if np.mean(traj1_feature_values) > np.mean(traj2_feature_values):
+        if np.mean(traj1_feature_values) > np.mean(traj2_feature_values):  # Here, we take the MEAN height
             ordinary_comps = ["The first trajectory is " + w + " than the second trajectory." for w in greater_height_adjs]
             flipped_comps = ["The second trajectory is " + w + " than the first trajectory." for w in less_height_adjs]
             return ordinary_comps + flipped_comps
@@ -45,7 +45,7 @@ def generate_synthetic_comparisons(traj1, traj2, feature_name):
         traj1_feature_values = [distance_to_bottle(traj1[t]) for t in range(horizon)]
         traj2_feature_values = [distance_to_bottle(traj2[t]) for t in range(horizon)]
 
-        if np.mean(traj1_feature_values) > np.mean(traj2_feature_values):
+        if np.min(traj1_feature_values) > np.min(traj2_feature_values):  # Here, we take the MINIMUM distance
             ordinary_comps = ["The first trajectory is " + w + " than the second trajectory." for w in greater_distance_adjs]
             flipped_comps = ["The second trajectory is " + w + " than the first trajectory." for w in less_distance_adjs]
             return ordinary_comps + flipped_comps
