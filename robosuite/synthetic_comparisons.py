@@ -11,6 +11,11 @@ less_distance_adjs = ["closer", "nearer", "more nearby"]
 
 
 # This function takes in two trajectories in the form of LISTS of (observation, action) pairs.
+# Features:
+# Speed (mean)
+# Height (mean)
+# Distance to cube (final)
+# Distance to bottle (min)
 def generate_synthetic_comparisons(traj1, traj2, feature_name):
     horizon = len(traj1)
     traj1_feature_values = None
