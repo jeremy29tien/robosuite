@@ -1069,6 +1069,7 @@ class MjSim:
 
     @classmethod
     def from_xml_string(cls, xml):
+        print(xml)
         model = mujoco.MjModel.from_xml_string(xml)
         return cls(model)
 
